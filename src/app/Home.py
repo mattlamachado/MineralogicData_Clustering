@@ -6,7 +6,7 @@ st.set_page_config(
     page_title = 'Mineral Clustering',
     page_icon= icon)
 
-bg = Image.open('.\docs\\automated_classification_minerals.png')
+bg = Image.open('./docs/automated_classification_minerals.png')
 st.image(bg)
 
 st.markdown('''# **Mineral Clustering for Zeiss Mineralogic**
