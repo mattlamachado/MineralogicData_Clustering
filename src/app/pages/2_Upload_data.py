@@ -2,11 +2,11 @@ import streamlit as st
 from PIL import Image
 import pandas as pd
 import time
-
+import functions_ as f
 import sys
 sys.path.append('./src')
 
-import functions_ as f
+
 
 icon = Image.open('./docs/if-crystal-shard-2913097_88819.png')
 st.set_page_config(
