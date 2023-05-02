@@ -6,5 +6,5 @@ st.set_page_config(
     page_title = 'Mineral Clustering',
     page_icon= icon)
 
-
-st.table(st.session_state.df.sample(15))
+if st.session_state:
+    st.table(st.session_state.df.sample(15))

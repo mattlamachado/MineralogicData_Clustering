@@ -2,9 +2,13 @@ import streamlit as st
 from PIL import Image
 import pandas as pd
 import time
-import functions_ as f
 import sys
 sys.path.append('./src')
+
+# append folder to path in order to import functions
+import functions_ as f
+
+
 
 
 
