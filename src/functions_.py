@@ -54,3 +54,30 @@ def upload(files):
   for i, n in enumerate(files):
       print(n)
 
+#####################################################################
+
+def clr(X):
+  import pandas as pd
+  import numpy as np
+  from scipy.stats import gmean
+
+  '''log_ratio refers to the method used to compute the logratio, it accepts ['centered', 'additive', 'isometric']
+  '''
+  
+  X = X.replace(0, 10**-5)
+  gm = pd.Series(dtype='float64')
+
+  log_ratio = 'centered'
+  if log_ratio == 'centered':
+    gm = gmean(X, axis = 1)
+
+    for i in X.columns:
+      X.loc[:,i] = np.log( X.loc[:,i] / gm )
+
+  # if log_ratio == 'additive':
+  #   den = X[additive_den]
+  #   for i in X.columns:
+  #     X.loc[:,i] = np.log( X.loc[:,i] / den )
+
+  return X
+
