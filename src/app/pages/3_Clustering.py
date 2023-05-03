@@ -45,7 +45,8 @@ if st.session_state:
         n_samples = st.number_input('number of samples', min_value=100, value=1000)
     
     if elements:
-        X.fillna(0, inplace=True) # 10**-5
+        X.fillna(10**-5, inplace=True) # 10**-5
+        X.replace(0,10**-5, inplace=True,)
         x = X.loc[:,elements].sample(n=n_samples, random_state=42, ignore_index=True)
 
 # tuning of components
@@ -73,7 +74,7 @@ if st.session_state:
             for tol in [1]:
                 pipeline = Pipeline(steps = 
                 [
-                    ('powerTransformer', PowerTransformer(method='yeo-johnson', standardize=True)),
+                    ('powerTransformer', PowerTransformer(method='box-cox', standardize=True)),
                     # ('centered log-ratio', CLR), # centered log-ratio transformation
                     # ('standard scaler', StandardScaler()),
                     ('model', GaussianMixture(
@@ -108,10 +109,14 @@ if st.session_state:
                         y=metric,
                         x='n')
             plt.grid(which='both', color='grey', linewidth=0.5)
-            plt.xticks(np.arange(n_min, n_max, step), minor=True)
+            plt.xticks(np.arange(n_min, n_max, step)) #, minor=True
+        plt.suptitle('Metrics')
         metrics_fig.tight_layout()
-
-        st.pyplot(metrics_fig)
+        if metrics_fig not in st.session_state:
+            st.session_state['metrics_fig'] = metrics_fig
+    
+    if 'metrics_fig' in st.session_state:
+        st.pyplot(st.session_state['metrics_fig'])
 
     st.markdown('''**Silhouette Score**: This metric measures how well each data point in a cluster is separated from other clusters. 
     The score ranges from -1 to 1, with higher values indicating better cluster separation. A score close to 1 indicates well-defined clusters, 
@@ -137,7 +142,7 @@ if st.session_state:
     [
         # ('centered log-ratio', CLR), # centered log-ratio transformation
         # ('standard scaler', StandardScaler())
-        ('powerTransformer', PowerTransformer(method='yeo-johnson', standardize=True))
+        ('powerTransformer', PowerTransformer(method='box-cox', standardize=True))
     ])
 
     pipeline = Pipeline(steps= 
@@ -166,7 +171,6 @@ if st.session_state:
 
     pca_fig = plt.figure(dpi=300)
     a = 1
-    plt.title('Principal Component visualization')
     for g in graphs:
         plt.subplot(2,2,a)
         a+=1
@@ -179,26 +183,51 @@ if st.session_state:
         plt.legend([],[], frameon=False)
         # plt.yscale('log')
         # plt.xscale('log')  
-
+    plt.suptitle('Principal Component visualization')
     plt.tight_layout()
 
     st.pyplot(pca_fig)
+
+    colx, coly, colclass = st.columns([1,1,3])
+
+    with colx:
+        x_ = st.selectbox('x axis',elements)
+    with coly:
+        y_ = st.selectbox('y axis', elements)
+    with colclass:
+        selected_classes = st.multiselect('Classes', np.unique(classification))
+
+    if not selected_classes:
+        selected_classes = np.unique(classification)
+    
+    class_filter = [c in selected_classes for c in classification] 
+
+    scatter_fig = plt.figure(dpi=200)
+    sns.scatterplot(
+        data = x[class_filter],
+        x = x_, y = y_, hue = classification[class_filter], 
+        palette='tab10', s=4, alpha=0.7
+    )
+    
+    st.pyplot(scatter_fig)
+
+
 
     # full dataframe
     # classification_full = pipeline['centered log-ratio'].transform(X.loc[:, elements].fillna(10**-5))
     # classification_full = pd.DataFrame(data = pipeline['standard scaler'].transform(classification_full), columns = X[elements].columns)
     # classification_full['class'] = pd.Series(pipeline.predict(X.loc[:, elements].fillna(10**-5)))
 
-    aggregation = ['min', 
-                  ('M-3*SD', lambda x: np.mean(x) - 3*np.std(x, ddof=1)),
-                  ('2%', lambda x: np.percentile(x, q=0.02)),
-                  ('10%', lambda x: np.percentile(x, q=0.1)), 
-                  'median', 
-                  'mean',
-                  ('90%', lambda x: np.percentile(x, q=0.9)), 
-                  ('98%', lambda x: np.percentile(x, q=0.98)),
-                  ('M+3*SD', lambda x: np.mean(x) + 3*np.std(x, ddof=1)), 
-                  'max']
+    # aggregation = ['min', 
+    #               ('M-3*SD', lambda x: np.mean(x) - 3*np.std(x, ddof=1)),
+    #               ('2%', lambda x: np.percentile(x, q=0.02)),
+    #               ('10%', lambda x: np.percentile(x, q=0.1)), 
+    #               'median', 
+    #               'mean',
+    #               ('90%', lambda x: np.percentile(x, q=0.9)), 
+    #               ('98%', lambda x: np.percentile(x, q=0.98)),
+    #               ('M+3*SD', lambda x: np.mean(x) + 3*np.std(x, ddof=1)), 
+    #               'max']
     
     aggregation_dict = {
         'min':'min',
@@ -217,14 +246,17 @@ if st.session_state:
         'max':'max'
     }
 
-    classification_full = pd.DataFrame(data= pipeline_transformer.transform(x), columns = x.columns)
+    classification_full = x.copy() 
+    # pd.DataFrame(data= pipeline_transformer.transform(x), columns = x.columns)
     classification_full['class'] = classification
 
     summary_dict = dict()
     for i in aggregation_dict.keys():
         summary_dict[i] = classification_full.groupby(by='class')[elements].agg(aggregation_dict[i])
-        summary_dict[i] = pd.DataFrame(data = pipeline_transformer.inverse_transform(summary_dict[i]), columns=summary_dict[i].columns)
-    
+        # st.table(summary_dict[i])
+        # summary_dict[i] = pd.DataFrame(data = pipeline_transformer.inverse_transform(summary_dict[i]), columns=summary_dict[i].columns)
+        # st.table(summary_dict[i])
+
     final_df = pd.DataFrame()
     for col in x.columns:
         for key in summary_dict.keys():
@@ -237,7 +269,7 @@ if st.session_state:
     download_name = f'{time.localtime()[0]}-{time.localtime()[1]}-{time.localtime()[2]}-{time.localtime()[4]}'
 
     st.download_button('Download', 
-                    data = final_df.to_csv(sep = ';', index=False).encode('utf-8'),
-                    file_name = f'summary_table_{download_name}.csv')
+                    data = final_df.to_csv(sep = ';', index=True).encode('utf-8'),
+                    file_name = f'summary_table_{clusters}clus_{n_samples}n_{download_name}.csv')
     
 
