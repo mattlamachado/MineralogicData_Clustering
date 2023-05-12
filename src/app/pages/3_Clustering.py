@@ -1,5 +1,6 @@
 import streamlit as st
 from PIL import Image
+import math
 from sklearn.preprocessing import StandardScaler, FunctionTransformer, PowerTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.mixture import GaussianMixture
@@ -23,14 +24,41 @@ st.set_page_config(
     layout="wide")
 
 # PLOT SETTINGS
-font = {'family' : 'arial',
-        'size'   : 12}
-plt.rc('font', **font)
+cm = 1/2.54  # centimeters in inches
 
+sns.set_style(rc= {'axes.facecolor': 'white',
+                    'axes.edgecolor': 'black',
+                    'axes.grid': False,
+                    'axes.axisbelow': 'line',
+                    'axes.labelcolor': 'black',
+                    'figure.facecolor': 'white',
+                    'grid.color': 'grey',
+                    'grid.linestyle': '-',
+                    'text.color': 'black',
+                    'xtick.color': 'black',
+                    'ytick.color': 'black',
+                    'xtick.direction': 'in',
+                    'ytick.direction': 'in',
+                    'patch.edgecolor': 'black',
+                    'patch.force_edgecolor': False,
+                    'image.cmap': 'coolwarm',
+                    'font.family': ['sans serif'],
+                    'font':'arial',
+                    'xtick.bottom': True,
+                    'xtick.top': True,
+                    'ytick.left': True,
+                    'ytick.right': True,
+                    'axes.spines.left': True,
+                    'axes.spines.bottom': True,
+                    'axes.spines.right': True,
+                    'axes.spines.top': True,
+                    'font.size': 7.0}
+                    )
+
+# START SESSION _____________________________________________________________________
 if not st.session_state:
     st.markdown('### Go to Upload data page first!')
 
-# START SESSION _____________________________________________________________________
 if st.session_state:
 
     X = st.session_state.df
@@ -53,8 +81,8 @@ if st.session_state:
     CLR = FunctionTransformer(clr)
 
     st.markdown('## Discover the best number of components:')
-    st.markdown('''This may take a while, so stay aware of the parameters you choose. 
-    The sample's size and number of components can impact sigficatively the processing time.''')
+    st.markdown('''##### This may take a while, so stay aware of the parameters you choose.\
+    The sample's size and number of components can impact sigficatively the processing time.''',)
 
     run_model = st.button('Run clusterization') 
         
@@ -98,10 +126,10 @@ if st.session_state:
                 progress_bar.progress(index/progress_step)
         #______________________________________________________________________________
 
-        # ploting metrics
+        # PLOTING METRICS _____________________________________________________________
 
         a=1
-        metrics_fig = plt.figure(figsize=(15, 7), dpi = 300)
+        metrics_fig = plt.figure(figsize=(22*cm, 12*cm), dpi = 300)
         for metric in ['calinski', 'bouldin', 'silhouette', 'BIC', 'AIC']:
             plt.subplot(2,3,a)
             a+=1
@@ -109,9 +137,13 @@ if st.session_state:
                         y=metric,
                         x='n')
             plt.grid(which='both', color='grey', linewidth=0.5)
-            plt.xticks(np.arange(n_min, n_max, step)) #, minor=True
+            plt.xticks(np.arange(n_min, n_max, step), minor=True, rotation=90) #, 
+            plt.xlabel('')
+            plt.ylabel('')
+            plt.title(metric)
         plt.suptitle('Metrics')
         metrics_fig.tight_layout()
+
         if metrics_fig not in st.session_state:
             st.session_state['metrics_fig'] = metrics_fig
     
@@ -169,14 +201,14 @@ if st.session_state:
     pcs = pd.DataFrame(data=PCA(4).fit_transform(x), columns=[1,2,3,4])
     graphs = [[1,2], [1,3], [2,3], [1,4]]
 
-    pca_fig = plt.figure(dpi=300)
+    pca_fig = plt.figure(figsize=(20*cm, 17*cm), dpi=300)
     a = 1
     for g in graphs:
         plt.subplot(2,2,a)
         a+=1
         sns.scatterplot(x = pcs.loc[:, g[0]],
                         y = pcs.loc[:, g[1]],
-                        s = 2,
+                        s = 4,
                         hue = classification,
                         palette = 'tab10',
                         alpha = 0.5)
@@ -188,6 +220,7 @@ if st.session_state:
 
     st.pyplot(pca_fig)
 
+    # SCATTER FIG _______________________________________________________________
     colx, coly, colclass = st.columns([1,1,3])
 
     with colx:
@@ -202,7 +235,7 @@ if st.session_state:
     
     class_filter = [c in selected_classes for c in classification] 
 
-    scatter_fig = plt.figure(dpi=200)
+    scatter_fig = plt.figure(figsize=(20*cm, 16*cm), dpi=200)
     sns.scatterplot(
         data = x[class_filter],
         x = x_, y = y_, hue = classification[class_filter], 
@@ -211,7 +244,58 @@ if st.session_state:
     
     st.pyplot(scatter_fig)
 
+    # HISTOGRAMS __________________________________________________________________
 
+    colhist1, colhist2, colhist3 = st.columns([3,1,1])
+    with colhist1:
+        class_element = st.multiselect('Classes to plot. If all, the histogram represents all data together.', 
+                                        np.unique(classification), 
+                                        default=np.unique(classification))
+        if len(class_element)==len(np.unique(classification)):
+            hue_hist=None
+            class_filter2 = [c in np.unique(classification) for c in classification]
+        else:
+            class_filter2 = [c in class_element for c in classification]
+            hue_hist=classification[class_filter2]
+
+    with colhist2:
+        kde_checked = st.checkbox('Kde curve', False)
+        if kde_checked:
+            kde_ = True
+        else:
+            kde_ = False
+
+    with colhist3:
+        log_checked = st.checkbox('Log scale', False)
+        if log_checked:
+            log_ = 'log'
+        else:
+            log_ = 'linear'
+
+    nrows = math.ceil(len(x.columns)/3)
+    hist_fig = plt.figure(figsize=(22*cm, 6*nrows*cm), dpi=300)
+
+    figx = 1
+    for col in x.columns:
+        plt.subplot(nrows,3, figx)
+        figx+=1
+        sns.histplot(
+            data=x[class_filter2], x=col,
+            bins = 21,
+            hue = hue_hist,
+            palette='tab10',
+            kde=kde_, line_kws={'color':'red', 'lw':1}
+        )
+        plt.ylabel('')
+        plt.xlabel('')
+        plt.yscale(log_)
+        plt.title(col)
+
+    plt.tight_layout()
+    st.pyplot(hist_fig)
+
+
+    # SUMMARY TABLE _______________________________________________________________
 
     # full dataframe
     # classification_full = pipeline['centered log-ratio'].transform(X.loc[:, elements].fillna(10**-5))

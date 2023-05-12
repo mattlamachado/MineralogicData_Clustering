@@ -9,9 +9,6 @@ sys.path.append('./src')
 import functions_ as f
 
 
-
-
-
 icon = Image.open('./docs/if-crystal-shard-2913097_88819.png')
 st.set_page_config(
     page_title = 'Mineral Clustering',
