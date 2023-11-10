@@ -10,7 +10,8 @@ text1 = '''
 ### **Upload Data**  
 You can import multiples csv files, it’s suggested that the file name contains information about the sample, because it will be incorporated 
 as a column on the concatenated table.
-The app first was designed to receive EDS data from the output of Mineralogic, so with Mineralogic Explorer you can export grain data on Particle data sheet (**Fig. 1**); 
+The app first was designed to receive EDS data from the output of Mineralogic, 
+so with Mineralogic Explorer you can export grain data on Particle data sheet (**Fig. 1**).
 
 But now you can upload any table like csv file separated by simple comma, and cluster whatever you want.
 
@@ -65,9 +66,9 @@ fig2_legend = '<center>Figure 2. Filtering grain data by phases.</center>'
 fig3_legend = '<center>Figure 3. Filtering grain data by range of feature, in this case the range of Ti grade on minerals.</center>'
 fig4_legend = '<center>Figure 4. Clustering of three phases and its respective chemical distribution.</center>'
 
-fig2_img_filter_mineral = Image.open('./docs/filter_bymineral_.png')
-fig3_img_filter_chem = Image.open('./docs/filter_bychem_.png')
-fig1_img_table = Image.open('./docs/table_.png')
+fig2_img_filter_mineral = Image.open('./docs/filter_bymineral_.PNG')
+fig3_img_filter_chem = Image.open('./docs/filter_bychem_.PNG')
+fig1_img_table = Image.open('./docs/table_.PNG')
 fig4_clustering = Image.open('./docs/clustering.png')
 
 st.markdown(text1)
