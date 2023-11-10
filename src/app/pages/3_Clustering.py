@@ -12,9 +12,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sys
-sys.path.append('./src')
+
 
 # append folder to path in order to import functions
+sys.path.append('./src')
 from functions_ import *
 
 icon = Image.open('./docs/if-crystal-shard-2913097_88819.png')
@@ -59,6 +60,7 @@ sns.set_style(rc= {'axes.facecolor': 'white',
 if not st.session_state:
     st.markdown('### Go to Upload data page first!')
 
+x=False
 if st.session_state:
 
     X = st.session_state.df
@@ -189,171 +191,173 @@ if st.session_state:
 
     # PLOT RESULTS AS PCS _______________________________________________________________
 
-    st.markdown('''The following visualization is a manner of assaying the results of clustering through dimensionality-reduction. 
-    The actual clustering considered the n-elements dimensions. The output results can be altered by many factors, such as: 
-    type of distribution for each element, nucleation of phases, superposition among phases, scarcity of a specific phase. 
-    It's recommended to go further on [GaussianMixture](https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html) 
-    to understand better the results.
-    ''')
+    if isinstance(x, pd.DataFrame):
 
-    classification = pipeline.fit_predict(x)
+        st.markdown('''The following visualization is a manner of assaying the results of clustering through dimensionality-reduction. 
+        The actual clustering considered the n-elements dimensions. The output results can be altered by many factors, such as: 
+        type of distribution for each element, nucleation of phases, superposition among phases, scarcity of a specific phase. 
+        It's recommended to go further on [GaussianMixture](https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html) 
+        to understand better the results.
+        ''')
 
-    pcs = pd.DataFrame(data=PCA(4).fit_transform(x), columns=[1,2,3,4])
-    graphs = [[1,2], [1,3], [2,3], [1,4]]
+        classification = pipeline.fit_predict(x)
 
-    pca_fig = plt.figure(figsize=(20*cm, 17*cm), dpi=300)
-    a = 1
-    for g in graphs:
-        plt.subplot(2,2,a)
-        a+=1
-        sns.scatterplot(x = pcs.loc[:, g[0]],
-                        y = pcs.loc[:, g[1]],
-                        s = 4,
-                        hue = classification,
-                        palette = 'tab10',
-                        alpha = 0.5)
-        plt.legend([],[], frameon=False)
-        # plt.yscale('log')
-        # plt.xscale('log')  
-    plt.suptitle('Principal Component visualization')
-    plt.tight_layout()
+        pcs = pd.DataFrame(data=PCA(4).fit_transform(x), columns=[1,2,3,4])
+        graphs = [[1,2], [1,3], [2,3], [1,4]]
 
-    st.pyplot(pca_fig)
+        pca_fig = plt.figure(figsize=(20*cm, 17*cm), dpi=300)
+        a = 1
+        for g in graphs:
+            plt.subplot(2,2,a)
+            a+=1
+            sns.scatterplot(x = pcs.loc[:, g[0]],
+                            y = pcs.loc[:, g[1]],
+                            s = 4,
+                            hue = classification,
+                            palette = 'tab10',
+                            alpha = 0.5)
+            plt.legend([],[], frameon=False)
+            # plt.yscale('log')
+            # plt.xscale('log')  
+        plt.suptitle('Principal Component visualization')
+        plt.tight_layout()
 
-    # SCATTER FIG _______________________________________________________________
-    colx, coly, colclass = st.columns([1,1,3])
+        st.pyplot(pca_fig)
 
-    with colx:
-        x_ = st.selectbox('x axis',elements)
-    with coly:
-        y_ = st.selectbox('y axis', elements)
-    with colclass:
-        selected_classes = st.multiselect('Classes', np.unique(classification))
+        # SCATTER FIG _______________________________________________________________
+        colx, coly, colclass = st.columns([1,1,3])
 
-    if not selected_classes:
-        selected_classes = np.unique(classification)
-    
-    class_filter = [c in selected_classes for c in classification] 
+        with colx:
+            x_ = st.selectbox('x axis',elements)
+        with coly:
+            y_ = st.selectbox('y axis', elements)
+        with colclass:
+            selected_classes = st.multiselect('Classes', np.unique(classification))
 
-    scatter_fig = plt.figure(figsize=(20*cm, 16*cm), dpi=200)
-    sns.scatterplot(
-        data = x[class_filter],
-        x = x_, y = y_, hue = classification[class_filter], 
-        palette='tab10', s=4, alpha=0.7
-    )
-    
-    st.pyplot(scatter_fig)
+        if not selected_classes:
+            selected_classes = np.unique(classification)
+        
+        class_filter = [c in selected_classes for c in classification] 
 
-    # HISTOGRAMS __________________________________________________________________
-
-    colhist1, colhist2, colhist3 = st.columns([3,1,1])
-    with colhist1:
-        class_element = st.multiselect('Classes to plot. If all, the histogram represents all data together.', 
-                                        np.unique(classification), 
-                                        default=np.unique(classification))
-        if len(class_element)==len(np.unique(classification)):
-            hue_hist=None
-            class_filter2 = [c in np.unique(classification) for c in classification]
-        else:
-            class_filter2 = [c in class_element for c in classification]
-            hue_hist=classification[class_filter2]
-
-    with colhist2:
-        kde_checked = st.checkbox('Kde curve', False)
-        if kde_checked:
-            kde_ = True
-        else:
-            kde_ = False
-
-    with colhist3:
-        log_checked = st.checkbox('Log scale', False)
-        if log_checked:
-            log_ = 'log'
-        else:
-            log_ = 'linear'
-
-    nrows = math.ceil(len(x.columns)/3)
-    hist_fig = plt.figure(figsize=(22*cm, 6*nrows*cm), dpi=300)
-
-    figx = 1
-    for col in x.columns:
-        plt.subplot(nrows,3, figx)
-        figx+=1
-        sns.histplot(
-            data=x[class_filter2], x=col,
-            bins = 21,
-            hue = hue_hist,
-            palette='tab10',
-            kde=kde_, line_kws={'color':'red', 'lw':1}
+        scatter_fig = plt.figure(figsize=(20*cm, 16*cm), dpi=200)
+        sns.scatterplot(
+            data = x[class_filter],
+            x = x_, y = y_, hue = classification[class_filter], 
+            palette='tab10', s=4, alpha=0.7
         )
-        plt.ylabel('')
-        plt.xlabel('')
-        plt.yscale(log_)
-        plt.title(col)
+        
+        st.pyplot(scatter_fig)
 
-    plt.tight_layout()
-    st.pyplot(hist_fig)
+        # HISTOGRAMS __________________________________________________________________
+
+        colhist1, colhist2, colhist3 = st.columns([3,1,1])
+        with colhist1:
+            class_element = st.multiselect('Classes to plot. If all, the histogram represents all data together.', 
+                                            np.unique(classification), 
+                                            default=np.unique(classification))
+            if len(class_element)==len(np.unique(classification)):
+                hue_hist=None
+                class_filter2 = [c in np.unique(classification) for c in classification]
+            else:
+                class_filter2 = [c in class_element for c in classification]
+                hue_hist=classification[class_filter2]
+
+        with colhist2:
+            kde_checked = st.checkbox('Kde curve', False)
+            if kde_checked:
+                kde_ = True
+            else:
+                kde_ = False
+
+        with colhist3:
+            log_checked = st.checkbox('Log scale', False)
+            if log_checked:
+                log_ = 'log'
+            else:
+                log_ = 'linear'
+
+        nrows = math.ceil(len(x.columns)/3)
+        hist_fig = plt.figure(figsize=(22*cm, 6*nrows*cm), dpi=300)
+
+        figx = 1
+        for col in x.columns:
+            plt.subplot(nrows,3, figx)
+            figx+=1
+            sns.histplot(
+                data=x[class_filter2], x=col,
+                bins = 21,
+                hue = hue_hist,
+                palette='tab10',
+                kde=kde_, line_kws={'color':'red', 'lw':1}
+            )
+            plt.ylabel('')
+            plt.xlabel('')
+            plt.yscale(log_)
+            plt.title(col)
+
+        plt.tight_layout()
+        st.pyplot(hist_fig)
 
 
-    # SUMMARY TABLE _______________________________________________________________
+        # SUMMARY TABLE _______________________________________________________________
 
-    # full dataframe
-    # classification_full = pipeline['centered log-ratio'].transform(X.loc[:, elements].fillna(10**-5))
-    # classification_full = pd.DataFrame(data = pipeline['standard scaler'].transform(classification_full), columns = X[elements].columns)
-    # classification_full['class'] = pd.Series(pipeline.predict(X.loc[:, elements].fillna(10**-5)))
+        # full dataframe
+        # classification_full = pipeline['centered log-ratio'].transform(X.loc[:, elements].fillna(10**-5))
+        # classification_full = pd.DataFrame(data = pipeline['standard scaler'].transform(classification_full), columns = X[elements].columns)
+        # classification_full['class'] = pd.Series(pipeline.predict(X.loc[:, elements].fillna(10**-5)))
 
-    # aggregation = ['min', 
-    #               ('M-3*SD', lambda x: np.mean(x) - 3*np.std(x, ddof=1)),
-    #               ('2%', lambda x: np.percentile(x, q=0.02)),
-    #               ('10%', lambda x: np.percentile(x, q=0.1)), 
-    #               'median', 
-    #               'mean',
-    #               ('90%', lambda x: np.percentile(x, q=0.9)), 
-    #               ('98%', lambda x: np.percentile(x, q=0.98)),
-    #               ('M+3*SD', lambda x: np.mean(x) + 3*np.std(x, ddof=1)), 
-    #               'max']
-    
-    aggregation_dict = {
-        'min':'min',
-        'M-3*SD': lambda x: (np.mean(x) - (2*np.std(x, ddof=1))),
-        '1%': lambda x: np.percentile(x, q=1),
-        '2%': lambda x: np.percentile(x, q=2),
-        '10%': lambda x: np.percentile(x, q=10),
-        # '50%': lambda x: np.percentile(x, q=50),
-        'median': lambda x: np.median(x),
-        'mean': lambda x: np.average(x),
-        # 'stdev': lambda x: np.std(x, ddof=1),
-        '90%': lambda x: np.percentile(x, q=90),
-        '98%': lambda x: np.percentile(x, q=98),
-        '99%': lambda x: np.percentile(x, q=99),
-        'M+3*SD': lambda x: (np.mean(x) + (2*np.std(x, ddof=1))),
-        'max':'max'
-    }
+        # aggregation = ['min', 
+        #               ('M-3*SD', lambda x: np.mean(x) - 3*np.std(x, ddof=1)),
+        #               ('2%', lambda x: np.percentile(x, q=0.02)),
+        #               ('10%', lambda x: np.percentile(x, q=0.1)), 
+        #               'median', 
+        #               'mean',
+        #               ('90%', lambda x: np.percentile(x, q=0.9)), 
+        #               ('98%', lambda x: np.percentile(x, q=0.98)),
+        #               ('M+3*SD', lambda x: np.mean(x) + 3*np.std(x, ddof=1)), 
+        #               'max']
+        
+        aggregation_dict = {
+            'min':'min',
+            'M-3*SD': lambda x: (np.mean(x) - (2*np.std(x, ddof=1))),
+            '1%': lambda x: np.percentile(x, q=1),
+            '2%': lambda x: np.percentile(x, q=2),
+            '10%': lambda x: np.percentile(x, q=10),
+            # '50%': lambda x: np.percentile(x, q=50),
+            'median': lambda x: np.median(x),
+            'mean': lambda x: np.average(x),
+            # 'stdev': lambda x: np.std(x, ddof=1),
+            '90%': lambda x: np.percentile(x, q=90),
+            '98%': lambda x: np.percentile(x, q=98),
+            '99%': lambda x: np.percentile(x, q=99),
+            'M+3*SD': lambda x: (np.mean(x) + (2*np.std(x, ddof=1))),
+            'max':'max'
+        }
 
-    classification_full = x.copy() 
-    # pd.DataFrame(data= pipeline_transformer.transform(x), columns = x.columns)
-    classification_full['class'] = classification
+        classification_full = x.copy() 
+        # pd.DataFrame(data= pipeline_transformer.transform(x), columns = x.columns)
+        classification_full['class'] = classification
 
-    summary_dict = dict()
-    for i in aggregation_dict.keys():
-        summary_dict[i] = classification_full.groupby(by='class')[elements].agg(aggregation_dict[i])
-        # st.table(summary_dict[i])
-        # summary_dict[i] = pd.DataFrame(data = pipeline_transformer.inverse_transform(summary_dict[i]), columns=summary_dict[i].columns)
-        # st.table(summary_dict[i])
+        summary_dict = dict()
+        for i in aggregation_dict.keys():
+            summary_dict[i] = classification_full.groupby(by='class')[elements].agg(aggregation_dict[i])
+            # st.table(summary_dict[i])
+            # summary_dict[i] = pd.DataFrame(data = pipeline_transformer.inverse_transform(summary_dict[i]), columns=summary_dict[i].columns)
+            # st.table(summary_dict[i])
 
-    final_df = pd.DataFrame()
-    for col in x.columns:
-        for key in summary_dict.keys():
-            col_name = f'{col}_{key}'
-            final_df[col_name] = summary_dict[key][col]
+        final_df = pd.DataFrame()
+        for col in x.columns:
+            for key in summary_dict.keys():
+                col_name = f'{col}_{key}'
+                final_df[col_name] = summary_dict[key][col]
 
-    st.table(final_df)
+        st.table(final_df)
 
-    import time
-    download_name = f'{time.localtime()[0]}-{time.localtime()[1]}-{time.localtime()[2]}-{time.localtime()[4]}'
+        import time
+        download_name = f'{time.localtime()[0]}-{time.localtime()[1]}-{time.localtime()[2]}-{time.localtime()[4]}'
 
-    st.download_button('Download', 
-                    data = final_df.to_csv(sep = ';', index=True).encode('utf-8'),
-                    file_name = f'summary_table_{clusters}clus_{n_samples}n_{download_name}.csv')
-    
+        st.download_button('Download', 
+                        data = final_df.to_csv(sep = ';', index=True).encode('utf-8'),
+                        file_name = f'summary_table_{clusters}clus_{n_samples}n_{download_name}.csv')
+        
 
