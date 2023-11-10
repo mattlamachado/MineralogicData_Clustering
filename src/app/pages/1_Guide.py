@@ -65,10 +65,10 @@ fig2_legend = '<center>Figure 2. Filtering grain data by phases.</center>'
 fig3_legend = '<center>Figure 3. Filtering grain data by range of feature, in this case the range of Ti grade on minerals.</center>'
 fig4_legend = '<center>Figure 4. Clustering of three phases and its respective chemical distribution.</center>'
 
-fig2_img_filter_mineral = Image.open('./docs/filter_bymineral_.png')
-fig3_img_filter_chem = Image.open('./docs/filter_bychem_.png')
-fig1_img_table = Image.open('./docs/table_.png')
-fig4_clustering = Image.open('./docs/clustering.png')
+fig2_img_filter_mineral = Image.open('./docs/filter_bymineral_.png', mode='r')
+fig3_img_filter_chem = Image.open('./docs/filter_bychem_.png', mode='r')
+fig1_img_table = Image.open('./docs/table_.png', mode='r')
+fig4_clustering = Image.open('./docs/clustering.png', mode='r')
 
 st.markdown(text1)
 st.image(fig1_img_table)
