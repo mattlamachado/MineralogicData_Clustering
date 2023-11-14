@@ -3,7 +3,6 @@ seaborn==0.12.2
 numpy==1.23.5
 matplotlib==3.6.2
 streamlit==1.16.0
-pyspark==3.2.1
 pandas==1.5.2
 ipykernel==6.19.2
 pillow==9.5.0
