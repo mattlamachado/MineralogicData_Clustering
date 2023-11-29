@@ -93,7 +93,7 @@ if st.session_state:
 
         # tuning of n-components _____________________________________________________
         index = 0
-        n_min, n_max, step = 10, 30, 1
+        n_min, n_max, step = 4, 25, 1
 
         # PROGRESS
         progress_bar = st.progress(0)
